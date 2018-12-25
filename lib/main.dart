@@ -42,7 +42,7 @@ class HomePage extends StatelessWidget {
               StreamBuilder<String>(
                 stream: bloc.email,
                 builder: (context, snapshot) => TextField(
-                      onChanged: (s) => bloc.emailChanged.add(s),
+                      onChanged: bloc.emailChanged,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                           border: OutlineInputBorder(),
@@ -57,7 +57,7 @@ class HomePage extends StatelessWidget {
               StreamBuilder<String>(
                 stream: bloc.password,
                 builder: (context, snapshot) => TextField(
-                      onChanged: (s) => bloc.passwordChanged.add(s),
+                      onChanged: bloc.passwordChanged,
                       keyboardType: TextInputType.text,
                       obscureText: true,
                       decoration: InputDecoration(
