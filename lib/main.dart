@@ -1,23 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:gdgbloc/bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gdgbloc/pagetwo.dart';
+
+import 'bloc/emailFieldBloc/emailBlocExport.dart';
+import 'bloc/passwordFieldBloc/passwordBlocExport.dart';
 
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: HomePage(),
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
+   build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => EmailBloc()),
+        BlocProvider(create: (context) => PasswordBloc())
+      ],
+      child: MaterialApp(
+        home: HomePage(),
+        theme: ThemeData(
+          primarySwatch: Colors.teal,
+        ),
+        debugShowCheckedModeBanner: false,
       ),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   changeThePage(BuildContext context) {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => PageTwo()));
@@ -25,7 +38,8 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bloc = Bloc();
+    final emailBLoc = BlocProvider.of<EmailBloc>(context);
+    final passwordBloc = BlocProvider.of<PasswordBloc>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -39,47 +53,91 @@ class HomePage extends StatelessWidget {
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              StreamBuilder<String>(
-                stream: bloc.email,
-                builder: (context, snapshot) => TextField(
-                      onChanged: bloc.emailChanged,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
+              BlocBuilder<EmailBloc, EmailState>(
+                  bloc: emailBLoc,
+                  builder: (context, state) {
+                    if (state is InitialEmailState ||
+                        state is CorrectEmailState)
+                      {
+                        return TextField(
+                        onChanged: (input) =>
+                            emailBLoc.add(ValidateEmail(input)),
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
                           border: OutlineInputBorder(),
                           hintText: "Enter email",
                           labelText: "Email",
-                          errorText: snapshot.error),
-                    ),
-              ),
+                        ),
+                      );}
+                    else if (state is WrongEmailState)
+                      {
+                        return TextField(
+                        onChanged: (input) =>
+                            emailBLoc.add(ValidateEmail(input)),
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: "Enter email",
+                            labelText: "Email",
+                            errorText: state.errorMessage),
+                      );}
+                    return null;
+                  }),
               SizedBox(
                 height: 20.0,
               ),
-              StreamBuilder<String>(
-                stream: bloc.password,
-                builder: (context, snapshot) => TextField(
-                      onChanged: bloc.passwordChanged,
-                      keyboardType: TextInputType.text,
-                      obscureText: true,
-                      decoration: InputDecoration(
+              BlocBuilder<PasswordBloc, PasswordState>(
+                  bloc: passwordBloc,
+                  builder: (context, state) {
+                    if (state is InitialPasswordState ||
+                        state is CorrectPasswordState)
+                      {
+                        return TextField(
+                        onChanged: (input)=>passwordBloc.add(ValidatePasswordEvent(input)),
+                        keyboardType: TextInputType.text,
+                        obscureText: true,
+                        decoration: InputDecoration(
                           border: OutlineInputBorder(),
                           hintText: "Enter password",
                           labelText: "Password",
-                          errorText: snapshot.error),
-                    ),
-              ),
+                        ),
+                      );}
+                    else if (state is WrongPasswordState)
+                      {
+                        return TextField(
+                        onChanged: (input)=>passwordBloc.add(ValidatePasswordEvent(input)),
+                        keyboardType: TextInputType.text,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: "Enter password",
+                          labelText: "Password",
+                          errorText: state.errorMessage
+                        ),
+                      );}
+                    return null;
+                  }),
               SizedBox(
                 height: 20.0,
               ),
-              StreamBuilder<bool>(
-                stream: bloc.submitCheck,
-                builder: (context, snapshot) => RaisedButton(
-                      color: Colors.tealAccent,
-                      onPressed: snapshot.hasData
-                          ? () => changeThePage(context)
-                          : null,
-                      child: Text("Submit"),
-                    ),
-              ),
+                BlocBuilder(
+                  bloc: emailBLoc,
+                  builder: (context,state)
+                    {
+                      if(state is CorrectEmailState)
+                      return BlocBuilder(
+                      bloc:passwordBloc,
+                      builder: (context,state){
+                        if(state is CorrectPasswordState)
+                          return RaisedButton(color: Colors.tealAccent,onPressed: ()=>changeThePage(context),child: Text('Submit'),);
+                        else 
+                          return RaisedButton(color: Colors.tealAccent,onPressed: null,child: Text('Submit'),);
+                      }
+                          
+                    );
+                    else return RaisedButton(color: Colors.tealAccent,onPressed: null,child: Text('Submit'),);
+                    })
+              // ),
             ],
           ),
         ),
